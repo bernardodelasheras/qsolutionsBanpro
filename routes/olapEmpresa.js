@@ -17,6 +17,7 @@ var mailPwd = process.env.MAIL_CONTRASENA;
 var mailPort = process.env.MAIL_SMTPPORT;
 
 router.get("/index", middleware.isLoggedIn, function (req, res) {
+    
     leeOlap2()
     .then (data=> {
         res.render("olapEmpresa/index", { data: data });
