@@ -27,6 +27,15 @@ router.get("/index", middleware.isLoggedIn, function (req, res) {
     )
 });
 
+router.get("/test/:user/:password", async function (req, res) {
+    var usu = req.params.user
+    var pwd = req.params.password
+
+    var data = await leeOlap3(usu,pwd).catch (err=> console.log(err))
+    res.status(200).json({data})
+});
+
+
 
 var leeOlap = function () {
     return new Promise(function (resolve, reject) {
@@ -93,5 +102,56 @@ var leeOlap2 = function () {
     });
 };
 
+var leeOlap3 = function (usu, pwd ) {
+    return new Promise(function (resolve, reject) {
+
+        var filas = []
+        var mssqlbanpro = require('mssql')
+
+        var config = {
+            user: 'consulta_banpro',
+            password: 'AlfaBanca2018',
+            server: process.env.SQLFIN700,
+            database: 'banpro',
+            requestTimeout: 1800000,
+            options: { packetSize: 8192, enableArithAbort: true, encrypt: false },
+        }
+    
+        mssqlbanpro.connect(config, err => {
+            if (err) {
+                console.log(err)
+            } else {
+                var sql = ""
+                sql += "SELECT GlbT_Empresas.EmpId,"
+                sql += "       GlbT_Entidad.EntRazonSocial,"
+                sql += "       '" + usu + "' usuario,"
+                sql += "       '" + pwd + "' contrasena"
+                sql += "  FROM GlbT_Empresas join"
+                sql += "       GlbT_Entidad on GlbT_Entidad.EntId = GlbT_Empresas.pEntId"
+                const request = new mssqlbanpro.Request()
+                request.stream = true // You can set streaming differently for each request
+                request.query(sql)
+    
+                request.on('recordset', columns => {
+                    var headers = "";
+                    Object.getOwnPropertyNames(columns).forEach(function (n) {
+                        headers += '"' + n + '";';
+                    });
+                })
+    
+                request.on('row', row => {
+                    filas.push(row);
+                })
+
+                request.on('done', result => {
+                    resolve(filas)
+                    mssqlbanpro.close();
+                })
+    
+            }            
+        })
+
+    });
+};
 
 module.exports = router

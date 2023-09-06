@@ -9,6 +9,11 @@ var sequelizeFin700 = require('../models/sequelizeConnectionFin700');
 var sequelize = require('../models/sequelizeConnection');
 var task = require('../models/task');
 const compressing = require('compressing');
+const Excel = require('exceljs');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+
 require('dotenv').config({ path: 'variables.env' });
 var timeZone = process.env.TIMEZONE;
 var mailServer = process.env.MAIL_SERVER;
@@ -16,7 +21,8 @@ var mailUsu = process.env.MAIL_USUARIO;
 var mailPwd = process.env.MAIL_CONTRASENA;
 var mailPort = process.env.MAIL_SMTPPORT;
 
-router.get("/index", middleware.isLoggedIn, function (req, res) {
+//router.get("/index", middleware.isLoggedIn, function (req, res) {
+router.get("/index", function (req, res) {
     let dIni = new Date()
     dIni.setDate(dIni.getDate()-30)
     fIni = dIni.toLocaleString().split(' ')[0].split('-')
@@ -56,6 +62,224 @@ router.post("/index", function (req, res) {
     procesaConsulta('grilla', req, res, taskdata);
 });
 
+var printHeader = async function (doc) {
+
+
+}
+
+
+router.post("/indexPdf", middleware.isLoggedIn, async function (req, res) {
+    var doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+    // Stream the PDF to a file
+    const outputPath = 'tmp/invoice.pdf';
+    const stream = fs.createWriteStream(outputPath);
+    doc.pipe(stream);
+  
+  
+      // Page Header
+  
+      // Add content to the PDF
+      doc.image('public/Salmones.jpeg', 50, 50, { width: 100, height: 50 });
+      doc.fontSize(8).text('NOTIFICACION DE PAGO', { align: 'center', underline: 1 });
+    
+      // Header Information
+      doc.fontSize(6);
+      doc.lineGap(3).text('Número: 10125',500);
+      doc.lineGap(3).text('Fecha: 24/07/2023');
+    
+      doc.lineGap(3).text('Empresa: Salmones Pacific Star S.A. / Trusal S.A. / ComSur Ltda.',50);
+      doc.lineGap(3).text(' ')
+      doc.lineGap(3).text('Para: Tesorería, Contabilidad, Gerencia Comercial')
+      doc.lineGap(3).text('Emitida Por: MARIA JOSE ASTUDILLO PEREZ')
+      doc.lineGap(3).text(' ')
+      doc.fontSize(7).lineGap(3).text('FACTURAS QUE PAGA', { align: 'center'})
+    
+      // Table Header
+      const tableHeaders = ['Nº Factura','Fecha Factura','Flete','RUT','Cliente','Moneda','Monto Factura','Monto Pago'];
+    
+       // Table setup
+       var tableTop = 190;
+       var tableLeft = 50;
+       var rowHeight = 20;
+       var colWidth = 65;
+       var cellPadding = 10;
+     
+       // Draw table headers
+       doc.lineWidth(0.5).rect(tableLeft, tableTop, (colWidth * tableHeaders.length)+10, rowHeight).stroke();
+       doc.fontSize(5);
+       tableHeaders.forEach((header, index) => {
+         doc.fontSize(7).text(header, tableLeft + index * colWidth, tableTop + cellPadding, { width: colWidth, align: 'center' });
+       });
+    
+  
+      // Page Header
+    
+      
+    // Sample Table Data (you can replace this with your actual data)
+    var totFactura=0.0
+    var totPago=0.0
+    var tableData = []
+
+    var valorFactura = 180695
+    var valorPago = 180540
+    var fila = ['6712', 
+                '05/06/2023', 
+                '0', 
+                '5393-7', 
+                'MIDA FOODS', 
+                'dólar', 
+                '$ '+formatNumber(valorFactura), 
+                '$ '+formatNumber(valorPago)]
+    for (var i = 0;i < 19; i++) {
+          tableData.push(fila)
+          totFactura += 180695
+          totPago += 180540
+    }
+
+    var valorFactura = 8069
+    var valorPago = 8054
+    totFactura += valorFactura
+    totPago += valorPago
+var fila = ['6712', 
+                '05/06/2023', 
+                '0', 
+                '5393-7', 
+                'MIDA FOODS', 
+                'dólar', 
+                '$ '+formatNumber(valorFactura), 
+                '$ '+formatNumber(valorPago)]
+    tableData.push(fila)
+    
+    var lineas=0
+    // Draw table rows
+    doc.fontSize(5);
+    tableData.forEach(async (rowData, rowIndex) => {
+  
+      if (lineas >= 20) {
+  
+          // Page Header
+          doc.addPage({ size: 'LETTER', margin: 50 });
+          // Add content to the PDF
+          doc.image('public/Salmones.jpeg', 50, 50, { width: 100, height: 50 });
+          doc.fontSize(8).text('NOTIFICACION DE PAGO', { align: 'center', underline: 1 });
+      
+          // Header Information
+          doc.fontSize(6);
+          doc.lineGap(3).text('Número: 10125',500);
+          doc.lineGap(3).text('Fecha: 24/07/2023');
+      
+          doc.lineGap(3).text('Empresa: Salmones Pacific Star S.A. / Trusal S.A. / ComSur Ltda.',50);
+          doc.lineGap(3).text(' ')
+          doc.lineGap(3).text('Para: Tesorería, Contabilidad, Gerencia Comercial')
+          doc.lineGap(3).text('Emitida Por: MARIA JOSE ASTUDILLO PEREZ')
+          doc.lineGap(3).text(' ')
+          doc.fontSize(7).lineGap(3).text('FACTURAS QUE PAGA', { align: 'center'})
+      
+          // Table Header
+          const tableHeaders = ['Nº Factura','Fecha Factura','Flete','RUT','Cliente','Moneda','Monto Factura','Monto Pago'];
+      
+          // Table setup
+          tableTop = 190;
+          tableLeft = 50;
+          rowHeight = 20;
+          colWidth = 65;
+          cellPadding = 10;
+      
+          // Draw table headers
+          doc.lineWidth(0.5).rect(tableLeft, tableTop, (colWidth * tableHeaders.length)+10, rowHeight).stroke();
+          doc.fontSize(5);
+          tableHeaders.forEach((header, index) => {
+             doc.fontSize(7).text(header, tableLeft + index * colWidth, tableTop + cellPadding, { width: colWidth, align: 'center' });
+          });
+      
+  
+          // Page Header
+          lineas = 0
+      }
+      const yPos = tableTop + rowHeight + lineas * rowHeight;
+      posyL = 0
+      lineas++
+      doc.lineWidth(0.2).rect(tableLeft, yPos, (colWidth * tableHeaders.length) + 10, rowHeight).stroke();
+      rowData.forEach((cellData, colIndex) => {
+        if (colIndex > 5) {
+            doc.fontSize(6).text(cellData, tableLeft + colIndex * colWidth, yPos + cellPadding, { width: colWidth, align: 'right'});
+        } else {
+            doc.fontSize(6).text(cellData, tableLeft + colIndex * colWidth, yPos + cellPadding, { width: colWidth, align: 'center' });
+        }
+      });
+    });
+  
+    // Footer Information
+    doc.fontSize(5);
+    
+    const tableFooter = ['', '', '', '', '', '', '$ '+formatNumber(totFactura), '$ '+formatNumber(totPago)];
+    
+    var yPos = tableTop + rowHeight + lineas * rowHeight
+    cellPadding=10
+    tableFooter.forEach((header, index) => {
+        if (index<5) {
+           doc.fontSize(6).text(header, tableLeft + index * colWidth, yPos + cellPadding, { width: colWidth, align: 'center' });
+        } else {
+           doc.fontSize(6).text(header, tableLeft + index * colWidth, yPos + cellPadding, { width: colWidth, align: 'right' });
+        }
+    });
+    lineas=lineas+2
+    
+    doc.text(' ',50)
+    doc.fontSize(7).lineGap(3).text('Datos del Pago', { align: 'center'})
+
+    yPos = tableTop + rowHeight + lineas * rowHeight
+    rowHeight=60
+    doc.lineWidth(0.2).rect(tableLeft, yPos, (colWidth * tableHeaders.length) + 10, rowHeight).stroke();
+
+    yPos += 5
+    doc.text('Fecha Recepción: 24/07/2023',80, yPos, {lineBreak: false})
+    doc.text('Fecha Documento: Detalle',400)
+    yPos += 10
+    doc.text('Tipo de Pago: Depósito',80, yPos, {lineBreak: false})
+    doc.text('Nº Documento: Detalle',400)
+    yPos += 10
+    doc.text('Banco: BCI',80, yPos, {lineBreak: false})
+    doc.text('Moneda Pago: DOLAR',400)
+    yPos += 10
+    doc.text(' ',80, yPos, {lineBreak: false})
+    doc.text('Monto Recibido: '+'US$ '+formatNumber(totPago),400)
+    yPos += 10
+    doc.text(' ',80, yPos, {lineBreak: false})
+    doc.text('GTO: -155,00',400)
+
+    doc.text(' ',50)
+    doc.fontSize(7).lineGap(3).text('Observaciones', { align: 'center'})
+
+    
+    yPos += 30
+    rowHeight=40
+    doc.lineWidth(0.2).rect(tableLeft, yPos, (colWidth * tableHeaders.length) + 10, rowHeight).stroke();
+
+
+    // Finalize the PDF and end the stream
+    doc.end();
+  
+    console.log('PDF generated successfully at', outputPath);
+    res.redirect("/solicitudesRpt/index")
+
+  });
+
+const formatNumber = (num, decimals) => num.toLocaleString('de-DE', {
+    maximunSignificantDigits: 14,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const fijaLargo = function (n,largo) {
+    var faltan = largo - n.length
+    var partes = n.split(' ')
+    for (var i=0; i<faltan; i++) {
+        partes[0] += ' '
+    }
+    return partes.join(' ')
+}    
+
 router.post("/generaexcel", function (req, res) {
     req.body.data.body = req.sanitize(req.body.data.body);
 
@@ -84,7 +308,7 @@ router.post("/generaexcel", function (req, res) {
 
     data = {
         empid: empid, proyectos:proyectos, 
-        destinatarios: req.session.useremail, hora: 01, minuto: 00, dias: dias
+        destinatarios: req.session.useremail, hora: 1, minuto: 0, dias: dias
     }
     res.render("wf_reporteDetallado/indexPrograma", { data: data });
 
